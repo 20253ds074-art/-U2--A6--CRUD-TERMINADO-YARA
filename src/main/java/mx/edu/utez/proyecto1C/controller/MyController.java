@@ -2,6 +2,9 @@ package mx.edu.utez.proyecto1C.controller;
 
 import jakarta.validation.Valid;
 import mx.edu.utez.proyecto1C.controller.dto.RequestBodyDTO;
+import mx.edu.utez.proyecto1C.controller.dto.RequestCalculadoraDTO;
+import mx.edu.utez.proyecto1C.service.MyService;
+import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +15,13 @@ import org.springframework.web.bind.annotation.*;
 
 
 public class MyController {
+    private final MyService service;
+    // inyeccion de dependencias
+    public MyController(MyService service) {
+        this.service = service;
+    }
+
+
     @GetMapping
     public String miPrimerServicio(){
         return "Hello world";
@@ -83,6 +93,11 @@ public class MyController {
 
         }
         return "Yara Ayme Pacheco Mendoza";
+    }
+
+    @PostMapping("/calculadora")
+    public Double calculadora(@RequestBody @Valid RequestCalculadoraDTO payload) throws BadRequestException {
+        return service.calculadora(payload);
     }
 
 
