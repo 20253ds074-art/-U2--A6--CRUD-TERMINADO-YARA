@@ -15,84 +15,76 @@ import java.util.List;
 
 @Service
 public class UsuarioService {
+
     private final UsuarioRepository usuarioRepository;
     private final PersonaRepository personaRepository;
-
 
     public UsuarioService(UsuarioRepository usuarioRepository, PersonaRepository personaRepository) {
         this.usuarioRepository = usuarioRepository;
         this.personaRepository = personaRepository;
     }
-    //SERVICIOS
 
-
-    public List<Usuario> getAllUsers(){
+    public List<Usuario> getAllUsers() {
         return usuarioRepository.findAll();
-
     }
 
-    public Usuario createUser(RequestCrearUsuarioDTO payload){
-        //Crear instancia de usuario y lenarlla en base a la info de payload
-
-        if (usuarioRepository.findByUsername(payload.getUsername()).isPresent()){
-            throw new BadRequestException("Este usuario ya esta en uso");
-        }
-        //registrar persona
-        Persona newPersona= new Persona();
-        newPersona.setNombre(payload.getNombres());
-        newPersona.setPrimerApellido(payload.getPrimerApellido());
-        newPersona.setSegundoApellido(payload.getSegundoApellido());
-        newPersona.setFechaNacimiento(payload.getFechaNacimiento());
-        newPersona.setCorreo(payload.getCorreo());
-        newPersona.setCurp(payload.getCurp());
-
-        //creando registro de persona y obtener sus datos como registro existente como el id
-        newPersona=personaRepository.save(newPersona);
-
-
-
-        //Crear instancia de usuario
-        Usuario newUser = new Usuario();
-        newUser.setUsername(payload.getUsername());
-        newUser.setPassword(payload.getPassword());
-        newUser.setDescripcion(payload.getDescripcion());
-        newUser.setEnable(true);
-        newUser.setRol(
-                Roles.valueOf(payload.getRol())
-        );
-
-        newUser.setPersona(newPersona);
-
-        return usuarioRepository.save(newUser);
-    }
-
-    // Consultar usuario por ID
+    // 1. Consultar información de un usuario por ID
     public Usuario getUserById(long id) {
         return usuarioRepository.findById(id)
-                .orElseThrow(() -> new BadRequestException("El usuario con el ID proporcionado no existe"));
+                .orElseThrow(() -> new BadRequestException("El usuario con el ID " + id + " no existe"));
     }
 
     @Transactional
-    public Usuario toggleUserStatus(long id, boolean isEnable) {
-        Usuario usuario = getUserById(id);
-        usuario.setEnable(isEnable);
+    public Usuario createUser(RequestCrearUsuarioDTO payload) {
+        if (usuarioRepository.findByUsername(payload.getUsername()).isPresent()) {
+            throw new BadRequestException("El nombre de usuario ya se encuentra registrado");
+        }
+
+        Persona persona = new Persona();
+        persona.setNombre(payload.getNombres());
+        persona.setPrimerApellido(payload.getPrimerApellido());
+        persona.setSegundoApellido(payload.getSegundoApellido());
+        persona.setFechaNacimiento(payload.getFechaNacimiento());
+        persona.setCorreo(payload.getCorreo());
+        persona.setCurp(payload.getCurp());
+        Persona personaGuardada = personaRepository.save(persona);
+
+        Usuario usuario = new Usuario();
+        usuario.setUsername(payload.getUsername());
+        usuario.setPassword(payload.getPassword());
+        usuario.setEnable(true);
+        usuario.setRol(Roles.valueOf(payload.getRol()));
+        usuario.setDescripcion(payload.getDescripcion());
+        usuario.setPersona(personaGuardada);
+
         return usuarioRepository.save(usuario);
     }
 
+    // 2. Activar y desactivar usuario (por id)
+    @Transactional
+    public Usuario toggleUserStatus(long id, boolean enable) {
+        Usuario usuario = getUserById(id);
+        usuario.setEnable(enable);
+        return usuarioRepository.save(usuario);
+    }
+
+    // 3. Actualizar username y descripcion sin perder relacion con Persona ni borrar otros datos
     @Transactional
     public Usuario updateUsuario(long id, RequestUpdateUsuarioDTO payload) {
         Usuario usuario = getUserById(id);
 
-        if (!usuario.getUsername().equals(payload.getUsername()) &&
-                usuarioRepository.findByUsername(payload.getUsername()).isPresent()) {
-            throw new BadRequestException("El username ya se encuentra en uso");
-        }
+        // Validar que el username no esté en uso por otro usuario diferente
+        usuarioRepository.findByUsername(payload.getUsername())
+                .ifPresent(u -> {
+                    if (u.getId() != id) {
+                        throw new BadRequestException("El nombre de usuario ya está ocupado por otro registro");
+                    }
+                });
 
         usuario.setUsername(payload.getUsername());
         usuario.setDescripcion(payload.getDescripcion());
 
-
+        // Se preserva la relación con Persona y los demás campos (password, rol, enable) intactos
         return usuarioRepository.save(usuario);
     }
-
 }

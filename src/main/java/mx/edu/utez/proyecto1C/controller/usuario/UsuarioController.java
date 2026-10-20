@@ -1,5 +1,6 @@
 package mx.edu.utez.proyecto1C.controller.usuario;
 
+import jakarta.validation.Valid;
 import mx.edu.utez.proyecto1C.controller.usuario.dto.RequestCrearUsuarioDTO;
 import mx.edu.utez.proyecto1C.controller.usuario.dto.RequestUpdateUsuarioDTO;
 import mx.edu.utez.proyecto1C.model.usuario.Usuario;
@@ -29,7 +30,7 @@ public class UsuarioController {
     }
 
     @PostMapping
-    public Usuario create(@RequestBody RequestCrearUsuarioDTO payload) {
+    public Usuario create(@RequestBody @Valid RequestCrearUsuarioDTO payload) {
         return usuarioService.createUser(payload);
     }
 
@@ -39,7 +40,7 @@ public class UsuarioController {
     }
 
     @PutMapping("/{id}")
-    public Usuario update(@PathVariable long id, @RequestBody RequestUpdateUsuarioDTO payload) {
+    public Usuario update(@PathVariable long id, @RequestBody @Valid RequestUpdateUsuarioDTO payload) {
         return usuarioService.updateUsuario(id, payload);
     }
 }

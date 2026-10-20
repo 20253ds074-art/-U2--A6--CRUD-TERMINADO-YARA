@@ -1,5 +1,6 @@
 package mx.edu.utez.proyecto1C.controller.persona;
 
+import jakarta.validation.Valid;
 import mx.edu.utez.proyecto1C.controller.persona.dto.RequestUpdatePersonaDTO;
 import mx.edu.utez.proyecto1C.model.persona.Persona;
 import mx.edu.utez.proyecto1C.service.persona.PersonaService;
@@ -28,7 +29,7 @@ public class PersonaController {
     }
 
     @PutMapping("/{id}")
-    public Persona update(@PathVariable long id, @RequestBody RequestUpdatePersonaDTO payload) {
+    public Persona update(@PathVariable long id, @RequestBody @Valid RequestUpdatePersonaDTO payload) {
         return personaService.updatePersona(id, payload);
     }
 }
